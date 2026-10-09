@@ -1,0 +1,12 @@
+import { useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
+import { products } from '../data';
+import ProductCard from '../components/ProductCard';
+import PageBanner from '../components/PageBanner';
+import ShopToolbar from '../components/ShopToolbar';
+export default function Shop(){
+ const [page,setPage]=useState(1); const [show,setShow]=useState(16); const [sort,setSort]=useState('Default'); const [view,setView]=useState('grid'); const [filterOpen,setFilterOpen]=useState(false); const [category,setCategory]=useState('All'); const [maxPrice,setMaxPrice]=useState(2000000);
+ const location=useLocation(); const query=new URLSearchParams(location.search).get('search')||'';
+ const filtered=useMemo(()=>{let list=products.filter(p=>`${p.name} ${p.desc}`.toLowerCase().includes(query.toLowerCase())&&p.price<=maxPrice);if(category!=='All')list=list.filter(p=>{const t=`${p.name} ${p.desc}`.toLowerCase();return category==='Chair'?t.includes('chair'):category==='Sofa'?t.includes('sofa'):category==='Table'?t.includes('table'):category==='Lighting'?t.includes('lamp'):t.includes('pot')||t.includes('mug')});if(sort==='Name')list.sort((a,b)=>a.name.localeCompare(b.name));if(sort==='Price low')list.sort((a,b)=>a.price-b.price);if(sort==='Price high')list.sort((a,b)=>b.price-a.price);return list},[query,sort,category,maxPrice]);
+ const pages=Math.max(1,Math.ceil(filtered.length/show));const currentPage=Math.min(page,pages);const visible=filtered.slice((currentPage-1)*show,currentPage*show);
+ return <><PageBanner title={query?`Search: ${query}`:'Shop'}/><ShopToolbar count={visible.length} total={filtered.length} show={show} setShow={v=>{setShow(v);setPage(1)}} sort={sort} setSort={v=>{setSort(v);setPage(1)}} view={view} setView={setView} filterOpen={filterOpen} setFilterOpen={setFilterOpen} category={category} setCategory={v=>{setCategory(v);setPage(1)}} maxPrice={maxPrice} setMaxPrice={v=>{setMaxPrice(v);setPage(1)}}/><section className="section shop-list">{visible.length?<div className={`product-grid ${view==='list'?'list-view':''}`}>{visible.map(p=><ProductCard key={p.id} product={p}/>)}</div>:<div className="cart-empty"><h2>No products found</h2><p>Try another search or clear your filters.</p></div>}{pages>1&&<div className="pagination">{Array.from({length:pages},(_,i)=>i+1).map(n=><button className={currentPage===n?'active':''} onClick={()=>setPage(n)} key={n}>{n}</button>)}{currentPage<pages&&<button onClick={()=>setPage(currentPage+1)}>Next</button>}</div>}</section></>}
